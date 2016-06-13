@@ -1,8 +1,8 @@
 *.log
 *.txt
 *.crc
-invrtedIndex/class/
-invrtedIndex/*.jar
+invertedIndex/class/
+invertedIndex/*.jar
 hbase/class
 hbase/*.jar
 pageRank/target/
