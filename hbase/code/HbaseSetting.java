@@ -9,4 +9,6 @@ public class HbaseSetting {
 
     public final static String[] colFamily = {DATA};
     public final static String[] pageRankQualifier= {NODE_NAME, PAGE_RANK};
+
+    public final static String DOCUMENT_COUNT_FILE_NAME = ".doucument_count.txt";
 }

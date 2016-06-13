@@ -52,7 +52,7 @@ public class HbaseUtils {
         hbseHadler.addRecordToHBase();
         fs.close();
         System.out.println("MYLOG : write "+count+" pageRank to Hbase");
-        Writer os = new FileWriter("doucument_count.txt");
+        Writer os = new FileWriter(HbaseSetting.DOCUMENT_COUNT_FILE_NAME);
         os.write(String.valueOf(file_id));
         os.close();
 

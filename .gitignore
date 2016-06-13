@@ -1,3 +1,10 @@
 *.log
 *.txt
 *.crc
+invrtedIndex/class/
+invrtedIndex/*.jar
+hbase/class
+hbase/*.jar
+pageRank/target/
+pageRank/project/
+
