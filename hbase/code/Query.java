@@ -25,8 +25,8 @@ public class Query {
                 queryWords.add(args[i]);
                 System.out.print(args[i]+",");
             }
-
-            System.out.println(HbaseUtils.getTop10Result(pageRankTableName, invertedIndexTableName, documentTableName, totalDocumentsCount, queryWords));
+            System.out.println();
+            System.out.println(HbaseUtils.getTopTenResult(pageRankTableName, invertedIndexTableName, documentTableName, totalDocumentsCount, queryWords));
         }
         return 0;
     }

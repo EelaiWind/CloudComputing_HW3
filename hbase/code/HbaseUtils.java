@@ -103,7 +103,8 @@ public class HbaseUtils {
         System.out.println("MYLOG : write "+lineCount+" word to InvertedIndex table");
     }
 
-    public static String getTop10Result(String pageRankTableName, String invertedIndexTableName, String documentTableName, int totalDocumentCount, List<String> queryWords) throws Exception{
+    public static String getTopTenResult(String pageRankTableName, String invertedIndexTableName, String documentTableName, int totalDocumentCount, List<String> queryWords) throws Exception{
+        final int topTen = 10;
         HbaseHandler pageRankTableHandler = new HbaseHandler(pageRankTableName);
         HbaseHandler invertedIndexHandler = new HbaseHandler(invertedIndexTableName);
         HbaseHandler documentTableHandler = new HbaseHandler(documentTableName);
@@ -119,11 +120,10 @@ public class HbaseUtils {
             resultBuffer.append("PageRank = "+data.pageRank+", TF-IDF = "+data.tfidf+"\n");
             resultBuffer.append( getMathingegments(document, queryWords) );
             resultBuffer.append("======\n\n");
-            if (rank >= 10){
+            if (rank >= topTen){
                 break;
             }
         }
-
         return resultBuffer.toString();
     }
 
@@ -132,17 +132,18 @@ public class HbaseUtils {
         int df = documentIdAndFrequency.size();
         List<String> documentIds = new ArrayList<String>();
         documentIds.addAll(documentIdAndFrequency.keySet());
-        List<String> nodeNames = pageRankTableHandler.getRows(documentIds, HbaseSetting.DATA, HbaseSetting.NODE_NAME);
-        List<String> pageRanks = pageRankTableHandler.getRows(documentIds, HbaseSetting.DATA, HbaseSetting.PAGE_RANK);
+        List<String> pageRankAndNodeNames = pageRankTableHandler.getPageRankAndNodeNames(documentIds);
 
         for (int i = 0 ; i < documentIds.size(); i++){
             ScoreData scoreData = new ScoreData();
-            double pageRank = Double.valueOf(pageRanks.get(i));
-            double tfidf = 1.0*documentIdAndFrequency.get(documentIds.get(i)) * Math.log10(1.0*totalDocumentCount/df);
+            int tf = documentIdAndFrequency.get(documentIds.get(i));
+            String[] tokens = pageRankAndNodeNames.get(i).split(" ",2);
+            double pageRank = Double.valueOf(tokens[0]);
+            double tfidf = 1.0*tf * Math.log10(1.0*totalDocumentCount/df);
             scoreData.pageRank = pageRank;
             scoreData.tfidf = tfidf;
             scoreData.totalScore = pageRank*tfidf*tfidf;
-            documentToScore.put( nodeNames.get(i) , scoreData);
+            documentToScore.put( tokens[1] , scoreData);
         }
 
         List<Map.Entry<String, ScoreData>> sortedList = new LinkedList<Map.Entry<String, ScoreData>>( documentToScore.entrySet() );
@@ -161,7 +162,6 @@ public class HbaseUtils {
                 }
             }
         });
-
         return sortedList;
     }
 
@@ -287,47 +287,41 @@ public class HbaseUtils {
         final int maxSegmentCount = 3;
         final int totalWordCount = queryWords.size();
         final int maxLength = document.length();
-        final Pattern wordPattern = Pattern.compile("[a-zA-Z]+");
-        Matcher wordMatcher = wordPattern.matcher(document);
-        int segmentCount = 0;
-
-        List<String> hasAppeared = new ArrayList<String>();
         List<String> resultBuffer = new ArrayList<String>();
+        String proccesses_document;
+        StringBuilder stringBuilder = new StringBuilder();
+        int uniqueResultCount = 0;
 
-        if ( totalWordCount < maxSegmentCount ){
-            while ( ( resultBuffer.size() < maxSegmentCount || hasAppeared.size() < totalWordCount) && wordMatcher.find() ){
-                String word = wordMatcher.group();
-                if ( queryWords.contains(word) ){
-                    int endIndex =  Math.min(maxLength, wordMatcher.end()+ segmentLength);
-                    if ( hasAppeared.contains(word) ){
-                        resultBuffer.add("\t"+document.substring(wordMatcher.start(), endIndex)+"\n");
-                    }
-                    else{
-                        hasAppeared.add(word);
-                        resultBuffer.add(0,"\t"+document.substring(wordMatcher.start(), endIndex)+"\n");
-                    }
+        document = " "+document+" ";
+        proccesses_document = document.replaceAll("[^A-Za-z]", " ");
+
+        for (String word : queryWords){
+            Matcher matcher = Pattern.compile(" "+word+" ").matcher(proccesses_document);
+            int count = 0 ;
+            boolean isFirst = true;
+            while ( matcher.find() && count < maxSegmentCount){
+                int endIndex =  Math.min(maxLength, matcher.end()+ segmentLength);
+                if (isFirst){
+                    isFirst = false;
+                    uniqueResultCount += 1;
+                    resultBuffer.add(0,"\t"+document.substring(matcher.start(), endIndex)+"\n");
+                }
+                else{
+                    resultBuffer.add("\t"+document.substring(matcher.start(), endIndex)+"\n");
+                }
+                count += 1;
+                if(uniqueResultCount >= maxSegmentCount){
+                    break;
                 }
             }
-        }
-        else{
-            while ( hasAppeared.size() < maxSegmentCount && wordMatcher.find() ){
-                String word = wordMatcher.group();
-                if ( queryWords.contains(word) ){
-                    int endIndex =  Math.min(maxLength, wordMatcher.end()+ segmentLength);
-                    if ( hasAppeared.contains(word) ){
-                        resultBuffer.add("\t"+document.substring(wordMatcher.start(), endIndex)+"\n");
-                    }
-                    else{
-                        hasAppeared.add(word);
-                        resultBuffer.add(0,"\t"+document.substring(wordMatcher.start(), endIndex)+"\n");
-                    }
-                }
+            if(uniqueResultCount >= maxSegmentCount){
+                break;
             }
         }
-        StringBuilder output = new StringBuilder();
-        for ( int i = 0 ; i < maxSegmentCount && i < resultBuffer.size(); i++ ){
-            output.append(resultBuffer.get(i));
+
+        for (int i = 0 ; i < maxSegmentCount && i < resultBuffer.size(); i++){
+            stringBuilder.append( resultBuffer.get(i) );
         }
-        return output.toString();
+        return stringBuilder.toString();
     }
 }

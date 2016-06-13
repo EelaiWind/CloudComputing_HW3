@@ -114,12 +114,13 @@ public class HbaseHandler {
         return new String(response.get(colFamily.getBytes()).get(qualifier.getBytes()));
     }
 
-    public List<String> getRows(List<String> rowKeys, String colFamily, String qualifier) throws Exception {
+    public List<String> getPageRankAndNodeNames(List<String> rowKeys) throws Exception {
         List<Get> getList = new ArrayList<Get>();
         List<String> resultList = new ArrayList<String>();
 
-        byte[] b_colFamily = colFamily.getBytes();
-        byte[] b_qualifier = qualifier.getBytes();
+        byte[] b_colFamily = HbaseSetting.DATA.getBytes();
+        byte[] b_nodeName = HbaseSetting.NODE_NAME.getBytes();
+        byte[] b_pageRank = HbaseSetting.PAGE_RANK.getBytes();
 
         for ( String rowKey : rowKeys ){
             getList.add(new Get(rowKey.getBytes()));
@@ -128,8 +129,9 @@ public class HbaseHandler {
             if (result.isEmpty()){
                 throw new Exception("There is no any row key = "+result.getRow());
             }
-            String value = new String(result.getNoVersionMap().get(b_colFamily).get(b_qualifier));
-            resultList.add(value);
+            String nodeName = new String(result.getNoVersionMap().get(b_colFamily).get(b_nodeName));
+            String pageRank = new String(result.getNoVersionMap().get(b_colFamily).get(b_pageRank));
+            resultList.add(pageRank+" "+nodeName);
         }
         return resultList;
     }

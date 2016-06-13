@@ -2,7 +2,7 @@ PAGERANK_TABLE_NAME=s101062105:PageRank
 INVERTEDINDEX_TABLE_NAME=s101062105:InvertedIndex
 DOCUMENT_TABLE_NAME=s101062105:Document
 
-INPUT_PATH=/shared/HW2/sample-in/input-100M
+INPUT_PATH=/shared/HW2/sample-in/input-1G
 PAGERANK_OUTPUT=/user/s101062105/hw3/output/pageRank
 
 ID_FILE_PATH=/user/s101062105/hw3/invertedIndex/id/file_id.txt
